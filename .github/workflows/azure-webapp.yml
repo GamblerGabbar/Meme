@@ -1,0 +1,50 @@
+name: Deploy Flask app to Azure Web App (Linux)
+
+on:
+  push:
+    branches: ["main", "master"]
+
+env:
+  AZURE_WEBAPP_NAME: your-app-name-here  # TODO: change to your Web App name
+  PYTHON_VERSION: '3.11'
+  WORKING_DIRECTORY: '.'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_GITHUB_SECRET }}
+
+      - name: Configure App Service runtime
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          mask-inputs: false
+          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}"}'
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ${{ env.WORKING_DIRECTORY }}
+          # startup-command: 'gunicorn --bind=0.0.0.0:8000 app:app'  # uncomment to force custom startup
+
+      - name: Logout
+        run: az logout

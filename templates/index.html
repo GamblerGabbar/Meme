@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Random Meme</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main>
+    <h1>🎲 Random Meme</h1>
+    <div id="meme-card" class="card">
+      <h2 id="meme-title">Loading…</h2>
+      <div class="image-wrap">
+        <img id="meme-image" alt="Random meme" />
+      </div>
+      <div class="actions">
+        <button id="next-btn">Another meme</button>
+      </div>
+      <p class="note">If the public API is unavailable, a locally generated meme is shown.</p>
+    </div>
+  </main>
+  <script>
+    async function loadMeme() {
+      const btn = document.getElementById('next-btn');
+      btn.disabled = true;
+      btn.textContent = 'Loading…';
+      try {
+        const res = await fetch('/meme');
+        const data = await res.json();
+        document.getElementById('meme-title').textContent = data.title || 'Random Meme';
+        const img = document.getElementById('meme-image');
+        img.src = data.url;
+        img.className = data.source === 'generated' ? 'rounded' : '';
+      } catch (e) {
+        document.getElementById('meme-title').textContent = 'Failed to load meme';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Another meme';
+      }
+    }
+    document.getElementById('next-btn').addEventListener('click', loadMeme);
+    // Load on first paint
+    loadMeme();
+  </script>
+</body>
+</html>
